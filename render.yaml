@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: laravel-filament-app
+    env: php
+    buildCommand: ./scripts/render-build.sh
+    startCommand: "php-fpm" # Optional, default is php-fpm. Nginx handles the web server part.
+    envVars:
+      - key: DOCROOT
+        value: public
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: laravel-db
+          property: connectionString
+      - key: DOCKER_ADMIN_EMAIL
+        value: admin@example.com
+      - key: DOCKER_ADMIN_PASSWORD
+        generateValue: true
+
+databases:
+  - name: laravel-db
+    databaseName: laravel
+    user: laravel
+    plan: free
