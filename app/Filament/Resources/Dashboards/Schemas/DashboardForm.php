@@ -64,7 +64,7 @@ class DashboardForm
                         }
                         
                         // Outros usuários só veem suas organizações
-                        $orgIds = $user->organizations()->pluck('id');
+                        $orgIds = $user->organizations()->pluck('id')->toArray();
                         return Organization::whereIn('id', $orgIds)->pluck('name', 'id');
                     })
                     ->default(function () {

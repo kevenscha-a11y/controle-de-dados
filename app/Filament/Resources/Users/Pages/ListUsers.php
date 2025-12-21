@@ -28,7 +28,7 @@ class ListUsers extends ListRecords
 
             if (! $isSuper) {
                 // organization-managers and regular users should only see users in their organizations
-                $orgIds = $user->organizations()->pluck('id');
+                $orgIds = $user->organizations()->pluck('id')->toArray();
                 $query = $query->whereHas('organizations', function ($q) use ($orgIds) {
                     $q->whereIn('id', $orgIds);
                 });
