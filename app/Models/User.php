@@ -7,11 +7,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRoles;
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Se for super-admin, libera tudo
+        if ($this->hasRole('super-admin')) {
+            return true;
+        }
+
+        // Se tiver qualquer outra role, também libera (o Shield cuida das permissões específicas depois)
+        // Se você quiser restringir o acesso ao painel apenas para quem tem roles, descomente a linha abaixo:
+        // return $this->roles()->exists();
+
+        return true;
+    }
 
     /**
      * The attributes that are mass assignable.
