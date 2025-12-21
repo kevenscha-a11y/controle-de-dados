@@ -33,7 +33,8 @@ class UserForm
                     ->string()
                     ->minLength(8)
                     ->maxLength(100)
-                    ->dehydrateStateUsing(fn($state) => filled($state) ? bcrypt($state) : null)
+                    ->dehydrateStateUsing(fn($state) => bcrypt($state))
+                    ->dehydrated(fn ($state) => filled($state))
                     ->required(fn($livewire) => $livewire instanceof \Filament\Resources\Pages\CreateRecord),
                 Select::make('role')
                     ->label('Função')
@@ -50,7 +51,7 @@ class UserForm
                     ->required()
                     ->afterStateUpdated(function ($state, $livewire) {
                     })
-                    ->dehydrateStateUsing(fn($state) => $state)
+                    ->dehydrated(false)
                     ->saveRelationshipsUsing(function ($component, $record, $state) {
                         if ($state) {
                             $role = Role::find($state);
