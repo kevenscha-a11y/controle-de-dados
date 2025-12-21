@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Garantir que o symlink de storage exista em ambientes locais / docker
         // Sem o link `public/storage` os logos (e outros uploads) não carregam.
         $autoLink = env('CREATE_STORAGE_LINK', false);
