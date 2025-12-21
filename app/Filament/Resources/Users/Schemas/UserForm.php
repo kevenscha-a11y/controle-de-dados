@@ -85,10 +85,10 @@ class UserForm
                                 return $query;
                             }
                             if (method_exists($current, 'hasRole') && $current->hasRole('organization-manager')) {
-                                $orgIds = $current->organizations()->pluck('organizations.id');
+                                $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
                                 return $query->whereIn('organizations.id', $orgIds);
                             }
-                            $orgIds = $current->organizations()->pluck('organizations.id');
+                            $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
                             return $query->whereIn('organizations.id', $orgIds);
                         }
                     )
