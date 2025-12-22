@@ -27,9 +27,11 @@ class UserForm
                     ->email()
                     ->required()
                     ->string()
-                    ->maxLength(120)
-                    // Evita erro 500 por violar a constraint única no banco
-                    ->rule(fn ($record) => Rule::unique('users', 'email')->ignore($record?->id)),
+                    ->rules([
+                        // Evita erro 500 por violação de unique no banco
+                        fn ($livewire) => Rule::unique('users', 'email')->ignore($livewire->record?->id),
+                    ])
+                    ->maxLength(120),
                 TextInput::make('password')
                     ->label('Senha')
                     ->password()
@@ -85,16 +87,67 @@ class UserForm
                                 return $query->whereRaw('0=1');
                             }
                             if (method_exists($current, 'hasRole') && $current->hasRole('super-admin')) {
-                                return $query;
+                                // Seleciona somente colunas necessárias para evitar DISTINCT * em tabelas com JSON
+                                return $query->select(['organizations.id', 'organizations.name'])->orderBy('organizations.name');
                             }
                             if (method_exists($current, 'hasRole') && $current->hasRole('organization-manager')) {
                                 $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
-                                return $query->whereIn('organizations.id', $orgIds);
+                                return $query->select(['organizations.id', 'organizations.name'])
+                                    ->whereIn('organizations.id', $orgIds)
+                                    ->orderBy('organizations.name');
                             }
                             $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
-                            return $query->whereIn('organizations.id', $orgIds);
+                            return $query->select(['organizations.id', 'organizations.name'])
+                                ->whereIn('organizations.id', $orgIds)
+                                ->orderBy('organizations.name');
                         }
                     )
+                    // Preload/Options: evita SELECT DISTINCT * gerado internamente pelo relacionamento
+                    ->options(function () {
+                        $current = Auth::user();
+                        if (! $current) {
+                            return [];
+                        }
+                        $base = Organization::query()->select(['organizations.id', 'organizations.name'])
+                            ->orderBy('organizations.name');
+                        if (! (method_exists($current, 'hasRole') && $current->hasRole('super-admin'))) {
+                            $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
+                            $base->whereIn('organizations.id', $orgIds);
+                        }
+                        return $base->limit(50)->pluck('organizations.name', 'organizations.id')->toArray();
+                    })
+                    // Busca customizada para evitar DISTINCT * no Postgres (colunas JSON)
+                    ->getSearchResultsUsing(function (string $search) {
+                        $current = Auth::user();
+                        $base = Organization::query()->select(['organizations.id', 'organizations.name'])
+                            ->when(strlen($search) > 0, function ($q) use ($search) {
+                                // Compatível com Postgres e demais drivers
+                                return $q->whereRaw('LOWER(organizations.name) LIKE ?', ['%' . strtolower($search) . '%']);
+                            })
+                            ->orderBy('organizations.name')
+                            ->limit(50);
+
+                        if (! $current) {
+                            return [];
+                        }
+                        if (! (method_exists($current, 'hasRole') && $current->hasRole('super-admin'))) {
+                            $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
+                            $base->whereIn('organizations.id', $orgIds);
+                        }
+
+                        return $base->pluck('organizations.name', 'organizations.id')->toArray();
+                    })
+                    // Labels dos valores selecionados, sem DISTINCT e sem selecionar colunas JSON
+                    ->getOptionLabelsUsing(function (array $values) {
+                        if (empty($values)) {
+                            return [];
+                        }
+                        return Organization::query()
+                            ->select(['organizations.id', 'organizations.name'])
+                            ->whereIn('organizations.id', $values)
+                            ->pluck('organizations.name', 'organizations.id')
+                            ->toArray();
+                    })
                     ->default(function () {
                         $current = Auth::user();
                         if (! $current) {
