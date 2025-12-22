@@ -98,9 +98,9 @@ class UserForm
                             return [];
                         }
                         if (method_exists($current, 'hasRole') && $current->hasRole('organization-manager')) {
-                            $orgIds = $current->organizations()->pluck('organizations.id');
-                            if ($orgIds->count() === 1) {
-                                return [$orgIds->first()];
+                            $orgIds = $current->organizations()->pluck('organizations.id')->toArray();
+                            if (count($orgIds) === 1) {
+                                return [$orgIds[0]];
                             }
                         }
                         return [];
