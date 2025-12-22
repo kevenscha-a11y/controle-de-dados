@@ -9,6 +9,7 @@ use App\Models\Organization;
 use Filament\Schemas\Schema;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserForm
 {
@@ -26,7 +27,9 @@ class UserForm
                     ->email()
                     ->required()
                     ->string()
-                    ->maxLength(120),
+                    ->maxLength(120)
+                    // Evita erro 500 por violar a constraint única no banco
+                    ->rule(fn ($record) => Rule::unique('users', 'email')->ignore($record?->id)),
                 TextInput::make('password')
                     ->label('Senha')
                     ->password()
